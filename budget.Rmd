@@ -1,0 +1,155 @@
+---
+title: "ELECTORAL BUDGET 2022-KENYA"
+output: 
+  flexdashboard::flex_dashboard:
+    theme:
+      bg: "#d1e0e0"
+      fg: "#000000" 
+      primary: "#669900"
+      base_font:
+        google: Roboto
+      code_font:
+        google: Ubuntu
+    orientation: columns
+    vertical_layout: fill
+    social: menu
+    source_code: embed
+    runtime: shiny
+---
+
+```{r setup, include=FALSE}
+#import libraries
+library(flexdashboard)
+library(echarts4r)
+library(dplyr)
+#import data
+data <- readxl::read_xlsx('data/data.xlsx')
+```
+
+Column {data-width=500}
+-----------------------------------------------------------------------
+### Statistics
+
+**Key**
+
+* Registered voters - 22,162,362
+* Budget - $383,560,000 Million
+* Per Registered voter - $17
+* Elective positions - 6
+
+### Elective positions
+
+``` {r}
+renderTable(
+data.table::data.table(Position = c('President','Governor','Senator','Women Representative','Member of National Assembly','Member of County Assembly','Total'),
+                      `Total Count` = c('1','47','47','47','290','1450','1882')
+                      )
+)
+
+```
+
+Column {data-width=500 .tabset}
+-----------------------------------------------------------------------
+### Comparative Data
+
+``` {r}
+renderTable (
+  data.table::data.table(Country = c(data$Country),
+                         Year = c(as.character(data$Year)),
+                         Expenditure = c(paste('$',as.character(data$Expenditure)))
+                      )
+)
+```
+ 
+
+### Graph
+
+```{r}
+#radial gradient background
+radial_gradient <- htmlwidgets::JS(
+  "new echarts.graphic.RadialGradient(
+    0.2, 0.7, 0.9,
+    [
+     {offset: 0, color: '#f7f8fa'},   
+    { offset: 1, color: '#cdd0d5'}
+    ])")
+ # plot
+data |>
+  arrange(desc(Expenditure)) |> #arrange in descending order
+  e_charts(Country) |> #x-axis
+  e_bar(Expenditure, # y-axis
+        bind = Year,
+        name='Country',
+        showBackground=TRUE,
+        emphasis = list(
+          focus = "item"),
+        itemStyle=list(
+          color = htmlwidgets::JS("
+          function(params) {
+          var colorList = ['#99e600','#00e6e6','#00e6e6','#00e6e6','#00e6e6','#00e6e6','#00e6e6'];
+          return colorList[params.dataIndex]
+          } 
+          "),
+          shadowBlur=1, #customise bars
+          shadowColor='#4f1721',
+          shadowOffsetY=2)
+        )|>
+  e_animation(duration = 4000)|> #duration in plot animation
+  e_tooltip(trigger='item',
+            backgroundColor='#ffffcc',
+            formatter =
+              htmlwidgets::JS("
+                              function(params){
+                              return('<strong>' + params.value[1] +
+                              '</strong><br />Year: '  + params.name +  
+                              '<br />Expenditure: ' +'</> $' +
+                              params.value[0]) 
+                              }
+                              "))|>
+  e_axis_labels(x='Countries',y = 'Expenditure') |> #axis labels
+  e_legend(show = FALSE) |>
+  e_title(text=paste('Expenditure per Registered Voter'),
+          subtext="Analyst: Jefferson Ndeke  Insights: BBC News Africa",link = 'https://www.facebook.com/watch/?v=797291747927851',
+          left='center',top=10,
+          sublink = 'https://github.com/ndeke254') |> #title
+  e_toolbox_feature(feature = c("restore","saveAsImage"),type='bar') |> #features to interact
+  e_datazoom(type='inside') |> #zoom to view
+  e_grid(show=TRUE,backgroundColor=radial_gradient, 
+         containLabel=TRUE,left='3%',right='7%',bottom='3%')|> #grid
+  e_color(background='#cdd0d5',color = c("green", "red")) |>
+  e_x_axis(axisTick=list(
+    alignWithLabel= TRUE
+  ),
+  splitLine=list(
+    lineStyle=list(
+      type='dashed'))) |>
+  e_y_axis(scale=TRUE,
+           axisTick=list(show=TRUE,
+             alignWithLabel= TRUE
+             ),
+           splitLine=list(
+             lineStyle=list(
+               type='dashed')),
+           formatter = e_axis_formatter('currency')) |>
+  e_flip_coords() 
+
+```
+
+### Cost Analysis
+
+**KENYA**
+
+* Kenya's General Election 2022 was among the most expensive in the world
+* Apart from Uganda and Zambia, all the other countries are richer than Kenya in terms of GDP
+ 
+ **But why?**
+ 
+ * A high number of elective positions
+ * Lack of infrastructure like network coverage in some poling stations
+ * Lack of trust - Import voting materials like ballot papers and voting kits
+ 
+ *However compared to 2017, this year's budget is significantly lower due to the already existing technology.*
+ 
+ **My take**
+ 
+*Kenya, a developing country, has a large wage bill and high budget on recurrent expenditure. This is a call for a reduction on overall representation of the tax payer.*
